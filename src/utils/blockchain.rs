@@ -23,7 +23,6 @@ pub async fn get_account(account_name: &String, settings: &Blockchain) -> Result
 
 			match json {
 				Ok(account) => {
-					println!("{:?}", &account);
 					Ok(account)
 				},
 				Err(_) => {

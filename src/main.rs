@@ -1,15 +1,16 @@
-use actix_web::{
-    App,
-    middleware,
-    HttpServer
-};
+#[macro_use]
+extern crate diesel;
+extern crate dotenv;
+
+use actix_web::{App, middleware, HttpServer};
+use diesel::{r2d2::{self, ConnectionManager}, PgConnection};
+use utils::{settings::Settings};
+
 mod api;
+mod models;
 mod router;
+mod schema;
 mod utils;
-use utils::{
-    settings::Settings
-};
-use r2d2_redis::{r2d2, RedisConnectionManager};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -18,12 +19,15 @@ async fn main() -> std::io::Result<()> {
 
     let settings = Settings::new().unwrap();
 
-    let redis_host = settings.redis.host;
     let host = settings.authenticator.host;
-    let manager = RedisConnectionManager::new(redis_host).unwrap();
+
+    dotenv::dotenv().ok();
+
+    let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
+    let manager = ConnectionManager::<PgConnection>::new(connspec);
     let pool = r2d2::Pool::builder()
         .build(manager)
-        .unwrap();
+        .expect("Failed to create pool.");
 
     HttpServer::new(move || {
         App::new()

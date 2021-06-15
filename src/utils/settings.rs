@@ -7,11 +7,6 @@ pub struct Authenticator {
 }
 
 #[derive(Deserialize,Clone,Debug)]
-pub struct Redis {
-    pub host: String
-}
-
-#[derive(Deserialize,Clone,Debug)]
 pub struct Blockchain {
     pub host: String
 }
@@ -19,7 +14,6 @@ pub struct Blockchain {
 #[derive(Deserialize,Clone,Debug)]
 pub struct Settings {
 	pub authenticator: Authenticator,
-    pub redis: Redis,
 	pub blockchain: Blockchain
 }
 
