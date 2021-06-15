@@ -1,8 +1,5 @@
 [authenticator]
 host = "127.0.0.1:8080"
 
-[redis]
-host = "redis://127.0.0.1:6379/"
-
 [blockchain]
 host = "https://node.hypha.earth"
