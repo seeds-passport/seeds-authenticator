@@ -10,6 +10,3 @@ CREATE TABLE authentication_entries (
   blockchain_index BIGINT DEFAULT NULL,
   PRIMARY KEY (id)
 )
-
-CREATE INDEX 
-ON address(phone);
