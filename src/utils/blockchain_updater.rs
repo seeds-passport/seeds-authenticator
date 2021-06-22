@@ -1,35 +1,40 @@
 use crate::utils::{settings::Settings};
 use tokio::time::{sleep, Duration};
 use ureq;
+use std::thread;
 
 pub fn start() {
-    use tokio::runtime::Runtime;
-    let rt = Runtime::new().unwrap();
+	thread::spawn(|| {
 
-    rt.spawn(async move {
-		let mut last_blockchain_id = "0";
-		// let's verify here if we have already got records in the database
-		// with blockchain_id filled and let's get the latest value
-		// ...
-		// If we already have records with that if filled, we get the maximum
-		// value and add one. We set the last_blockchain_id to that value.
-		// ...
-		// Then we need to do a loop to get records (without the 1 sec timer)
-		// and we stop once we got all the new records.
+		use tokio::runtime::Runtime;
+		let rt = Runtime::new().unwrap();
 
-		// Once the previous steps are done we get into an infinite loop:
-		loop {
-			load_authentication_entries(last_blockchain_id).await;
-			// Here we need to take the result of the previous function and store it on the database
-			// Once we have that done we need to set the last_blockchain_id variable to the new
-			// maximum index
-			last_blockchain_id = "50";
-			sleep(Duration::from_millis(1000)).await;
-		}
-    });
+		rt.spawn(async move {
+			let mut last_blockchain_id = "0";
+			// let's verify here if we have already got records in the database
+			// with blockchain_id filled and let's get the latest value
+			// ...
+			// If we already have records with that if filled, we get the maximum
+			// value and add one. We set the last_blockchain_id to that value.
+			// ...
+			// Then we need to do a loop to get records (without the 1 sec timer)
+			// and we stop once we got all the new records.
 
-	// This next loop is needed to keep this thread alive.
-    loop {};
+			// Once the previous steps are done we get into an infinite loop:
+			loop {
+				load_authentication_entries(last_blockchain_id).await;
+				// Here we need to take the result of the previous function and store it on the database
+				// Once we have that done we need to set the last_blockchain_id variable to the new
+				// maximum index
+				last_blockchain_id = "50";
+				sleep(Duration::from_millis(1000)).await;
+			}
+		});
+
+		// This next loop is needed to keep this thread alive.
+		loop {};
+   });
+
 }
 
 async fn load_authentication_entries(lower_bound: &str) {
