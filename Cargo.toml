@@ -21,6 +21,8 @@ mongodb = "2.0.0-beta.1"
 futures = "0.3"
 diesel = { version = "1.4.7", features = ["postgres", "uuidv07", "serde_json", "chrono", "r2d2"] }
 dotenv = "0.15.0"
+tokio = "1.7.1"
+ureq = {version = "2.1.1", features = ["json"]}
 
 [dev-dependencies]
 actix-rt = "1"
