@@ -2,7 +2,7 @@ use chrono::{NaiveDateTime};
 use crate::schema::authentication_entries;
 use serde::{Serialize, Deserialize};
 
-#[derive(Queryable, QueryableByName, Insertable, Serialize, Deserialize)]
+#[derive(Queryable, QueryableByName, Insertable, Serialize, Deserialize, Debug)]
 #[table_name="authentication_entries"]
 pub struct AuthenticationEntry {
     pub id: uuid::Uuid,
