@@ -13,6 +13,7 @@ use uuid::Uuid;
 
 pub fn start(pool: Pool<ConnectionManager<PgConnection>>) {
 	thread::spawn(|| {
+		let settings = Settings::new().unwrap();
 		use tokio::runtime::Runtime;
 		let rt = Runtime::new().unwrap();
 		rt.spawn(async move {
@@ -25,25 +26,25 @@ pub fn start(pool: Pool<ConnectionManager<PgConnection>>) {
 				let response = load_authentication_entries(last_blockchain_index).await;
 				let length = response["rows"].as_array().unwrap().len();
 				
-				// If the length of the response is below 50, it means
-				// that it is the last request we need to make (since it comes in batches of 50)
-				is_last = length < 50;
+				// If the length of the response is below the specified number in the settings, it means
+				// that it is the last request we need to make (since it comes in batches of of the specified number number in the settings)
+				is_last = length < settings.blockchain.fetch_limit as usize;
 				if !is_last {
-					last_blockchain_index = last_blockchain_index + 50;
+					last_blockchain_index = last_blockchain_index + i64::from(settings.blockchain.fetch_limit);
 				}
 
 				// Update records for this batch
-				update_records(&pool, response, length);
+				update_records(&pool, response);
 			}
 			// Once the previous steps are done we get into an infinite loop:
 			loop {
 				let response = load_authentication_entries(last_blockchain_index).await;
-				let length = response["rows"].as_array().unwrap().len();
+				
 				// Here we need to take the result of the previous function and store it on the database
 				// Once we have that done we need to set the last_blockchain_id variable to the new
 				// maximum index
-				update_records(&pool, response, length);
-				sleep(Duration::from_millis(1000)).await;
+				update_records(&pool, response);
+				sleep(Duration::from_millis(settings.blockchain.fetch_timeout)).await;
 			}
 		});
 
@@ -64,13 +65,8 @@ fn get_next_blockchain_id(pool: &Pool<ConnectionManager<PgConnection>>) -> i64 {
 
 	match result {
 		Ok(entries) => {
-			// Iterates through the records do get the latest blockchain_index
-			entries.iter().for_each(|entry| {
-				let db_index = entry.blockchain_index.unwrap();
-				if last_blockchain_index < db_index {
-					last_blockchain_index = db_index;
-				}
-			});
+			// Gets the higher blockchain_index value
+			last_blockchain_index = entries.iter().max_by_key(|entry| entry.blockchain_index).unwrap().blockchain_index.unwrap();
 		},
 		Err(error) => {
 			// If any error occured, print it in the terminal
@@ -80,23 +76,23 @@ fn get_next_blockchain_id(pool: &Pool<ConnectionManager<PgConnection>>) -> i64 {
 
 	// If there are already values, the search must continue from the next value
 	if last_blockchain_index != 0 {
-		last_blockchain_index = last_blockchain_index + 1;
+		last_blockchain_index += 1;
 	}
 
 	return last_blockchain_index;
 }
 
-fn update_records(pool: &Pool<ConnectionManager<PgConnection>>, response: Value, length: usize) {
-	let mut i = 0;
-	while i < length {
+fn update_records(pool: &Pool<ConnectionManager<PgConnection>>, response: Value) {
+	let response_iter = response["rows"].as_array().unwrap(); 
+	
+	for value in response_iter {
 		// For each record in the response, we want to check the database for entries, and update its blockchain_index
-		let backend_user_id: Uuid = Uuid::parse_str(&response["rows"][i]["backend_user_id"].as_str().unwrap()).unwrap();
-		let index = &response["rows"][i]["id"].as_i64().unwrap();
+		let backend_user_id: Uuid = Uuid::parse_str(value["backend_user_id"].as_str().unwrap()).unwrap();
+		let index = value["id"].as_i64().unwrap();
 		diesel::update(authentication_entries.filter(authentication_entries::id.eq(backend_user_id)))
 			.set(authentication_entries::blockchain_index.eq(index))
 			.execute(&pool.clone().get().unwrap()) 
 			.unwrap();
-		i += 1;
 	}
 }
 
@@ -113,7 +109,7 @@ async fn load_authentication_entries(lower_bound: i64) -> Value {
 	    "upper_bound": "",
 	    "index_position": 1,
 	    "key_type": "",
-	    "limit": 50,
+	    "limit": i64::from(settings.blockchain.fetch_limit),
 	    "reverse": false,
 	    "show_payer": false
 	})).unwrap();

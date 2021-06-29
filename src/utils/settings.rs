@@ -8,7 +8,9 @@ pub struct Authenticator {
 
 #[derive(Deserialize,Clone,Debug)]
 pub struct Blockchain {
-    pub host: String
+    pub host: String,
+    pub fetch_limit: i8,
+    pub fetch_timeout: u64
 }
 
 #[derive(Deserialize,Clone,Debug)]
