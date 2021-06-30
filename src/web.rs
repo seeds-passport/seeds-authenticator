@@ -1,20 +1,13 @@
 use actix_web::{App, middleware, HttpServer, dev::Server};
-use diesel::{r2d2::{self, ConnectionManager}, PgConnection};
+use diesel::{r2d2::{ConnectionManager, Pool}, PgConnection};
 use crate::utils::{settings::Settings};
 use crate::router;
 
-pub fn start_server () -> Server {
+pub fn start_server (pool: Pool<ConnectionManager<PgConnection>>) -> Server {
 
     let settings = Settings::new().unwrap();
 
     let host = settings.authenticator.host;
-   dotenv::dotenv().ok();
-
-    let connspec = std::env::var("DATABASE_URL").expect("DATABASE_URL");
-    let manager = ConnectionManager::<PgConnection>::new(connspec);
-    let pool = r2d2::Pool::builder()
-        .build(manager)
-        .expect("Failed to create pool.");
 
     HttpServer::new(move || {
 		App::new()
