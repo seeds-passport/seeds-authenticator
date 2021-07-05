@@ -4,8 +4,9 @@ use std::fmt;
 
 #[derive(Debug, Serialize)]
 pub enum AuthenticatorErrors {
-    // InternalServerError,
     AccountNotFound,
+    InvalidId,
+    InvalidToken
 }
 #[derive(Debug, Serialize)]
 pub struct MyErrorResponse {
@@ -16,11 +17,14 @@ impl std::error::Error for AuthenticatorErrors {}
 impl AuthenticatorErrors {
     fn error_response(&self) -> String {
         match self {
-            // AuthenticatorErrors::InternalServerError => {
-            //     "Internal Server Error".into()
-            // }
             AuthenticatorErrors::AccountNotFound => {
                 "Account Not Found".into()
+            }
+            AuthenticatorErrors::InvalidId => {
+                "Invalid id".into()
+            }
+            AuthenticatorErrors::InvalidToken => {
+                "Invalid token".into()
             }
         }
     }
@@ -29,8 +33,9 @@ impl AuthenticatorErrors {
 impl error::ResponseError for AuthenticatorErrors {
     fn status_code(&self) -> StatusCode {
         match self {
-            // AuthenticatorErrors::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             AuthenticatorErrors::AccountNotFound => StatusCode::NOT_FOUND,
+            AuthenticatorErrors::InvalidId => StatusCode::NOT_FOUND,
+            AuthenticatorErrors::InvalidToken => StatusCode::FORBIDDEN,
         }
     }
     fn error_response(&self) -> HttpResponse {
