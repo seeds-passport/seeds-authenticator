@@ -2,3 +2,4 @@
 config/environment.toml
 .vscode
 .env
+.database

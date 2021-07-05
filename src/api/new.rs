@@ -1,21 +1,15 @@
 
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use actix_web::{web, HttpResponse, Result};
+use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
-use chrono::{Duration, Utc};
 use crate::utils::{
     blockchain::get_account,
     settings::Settings,
     errors::AuthenticatorErrors,
     signature::{Policy, sign, Signature}
 };
-use crate::models::authentication_entries::{AuthenticationEntry};
-use diesel::{
-    PgConnection,
-    prelude::*,
-    r2d2::{ConnectionManager, self}
-};
+use crate::database::{AuthenticationEntry};
 
 #[derive(Serialize, Deserialize)]
 pub struct AnswerNew {
@@ -40,14 +34,11 @@ struct NewAuthenticationDataSet {
 	signature: Signature
 }
 
-type Pool = r2d2::Pool<ConnectionManager<PgConnection>>;
-
 pub async fn new(
-    pool: web::Data<Pool>,
+    db: web::Data<crate::database::Database>,
     params: web::Json<AuthenticationRequest>,
     settings: web::Data<Settings>
 ) -> Result<HttpResponse, AuthenticatorErrors> {
-    use crate::schema::authentication_entries;
 
     let account_name = params.account_name.as_ref().unwrap().to_string();
 
@@ -56,11 +47,9 @@ pub async fn new(
 
 			let data = generate_data(&account_name);
 
-            let conn = pool.get().unwrap();
-            let _ = diesel::insert_into(authentication_entries::table)
-                .values(&data.authentication_entry)
-                .execute(&conn);
-			
+            db.authentication_entries
+                .insert(data.policy.id.as_bytes(), data.authentication_entry).unwrap();
+
             let answer = AnswerNew {
                 id: data.policy.id,
                 account_name: data.policy.account_name,
@@ -81,7 +70,9 @@ fn generate_data(account_name: &String) -> NewAuthenticationDataSet {
 	let id = Uuid::new_v4();
 	let secret = Uuid::new_v4();
 
-	let valid_until = Utc::now().naive_utc() + Duration::days(30);
+    let start = SystemTime::now();
+    let valid_until: u64 =
+        start.duration_since(UNIX_EPOCH).unwrap().as_secs() + (86400 * 30);
 
 	let policy = Policy {
 		valid_until: format!("{}", valid_until),
@@ -96,10 +87,10 @@ fn generate_data(account_name: &String) -> NewAuthenticationDataSet {
 		id: id.clone(),
 		account_name: policy.account_name.clone(),
 		secret: secret,
-		valid_until: valid_until.into(), 
-		policy: json!(policy),
+		valid_until: valid_until, 
 		policy_base64: signature.base64_policy.clone(),
-		blockchain_index: None
+		blockchain_index: None,
+        token_hash: "".to_string() 
 	};
 
 	NewAuthenticationDataSet {

@@ -5,3 +5,6 @@ host = "127.0.0.1:8080"
 host = "https://node.hypha.earth"
 fetch_limit = 50
 fetch_timeout = 1000
+
+[database]
+path = ".database"
