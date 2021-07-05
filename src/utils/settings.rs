@@ -9,14 +9,20 @@ pub struct Authenticator {
 #[derive(Deserialize,Clone,Debug)]
 pub struct Blockchain {
     pub host: String,
-    pub fetch_limit: i8,
+    pub fetch_limit: u8,
     pub fetch_timeout: u64
+}
+
+#[derive(Deserialize,Clone,Debug)]
+pub struct Database {
+    pub path: String
 }
 
 #[derive(Deserialize,Clone,Debug)]
 pub struct Settings {
 	pub authenticator: Authenticator,
-	pub blockchain: Blockchain
+	pub blockchain: Blockchain,
+    pub database: Database,
 }
 
 impl Settings {
