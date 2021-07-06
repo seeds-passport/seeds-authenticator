@@ -6,7 +6,8 @@ use std::fmt;
 pub enum AuthenticatorErrors {
     AccountNotFound,
     InvalidId,
-    InvalidToken
+    InvalidToken,
+    BlockchainError
 }
 #[derive(Debug, Serialize)]
 pub struct MyErrorResponse {
@@ -26,6 +27,9 @@ impl AuthenticatorErrors {
             AuthenticatorErrors::InvalidToken => {
                 "Invalid token".into()
             }
+            AuthenticatorErrors::BlockchainError => {
+                "Error accessing the blockchain".into()
+            }
         }
     }
 }
@@ -36,6 +40,7 @@ impl error::ResponseError for AuthenticatorErrors {
             AuthenticatorErrors::AccountNotFound => StatusCode::NOT_FOUND,
             AuthenticatorErrors::InvalidId => StatusCode::NOT_FOUND,
             AuthenticatorErrors::InvalidToken => StatusCode::FORBIDDEN,
+            AuthenticatorErrors::BlockchainError => StatusCode::SERVICE_UNAVAILABLE,
         }
     }
     fn error_response(&self) -> HttpResponse {
