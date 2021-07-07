@@ -7,4 +7,11 @@ pub fn init_routes(cfg: &mut ServiceConfig) {
         web::resource("/api/v1/new").route(web::post().to(api::new::new)),
 	);
 
+    cfg.service(
+        web::resource("/api/v1/invalidate/{id}").route(web::post().to(api::invalidate::invalidate)),
+	);
+
+    cfg.service(
+        web::resource("/api/v1/check/{id}").route(web::post().to(api::check::check)),
+	);
 }

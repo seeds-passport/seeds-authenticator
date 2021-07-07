@@ -1,4 +1,4 @@
-use sha2::Sha256;
+use sha2::{Sha256, Digest};
 use hmac::{Hmac, Mac, NewMac};
 use serde::{Deserialize, Serialize};
 use base64::{encode};
@@ -34,4 +34,12 @@ pub fn sign(policy: &Policy, secret: &String, token: &String) -> Signature {
 		base64_policy: b64_policy,
 		signature: signature
 	}
+}
+
+pub fn hash_token(token: &String) -> String {
+	let mut hasher = Sha256::new();
+
+    hasher.update(&token.to_string());
+
+	format!("{:x}", hasher.finalize()) 
 }

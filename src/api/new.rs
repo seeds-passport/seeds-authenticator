@@ -7,7 +7,7 @@ use crate::utils::{
     blockchain::get_account,
     settings::Settings,
     errors::AuthenticatorErrors,
-    signature::{Policy, sign, Signature}
+    signature::{Policy, sign, Signature, hash_token}
 };
 use crate::database::{AuthenticationEntry};
 
@@ -90,7 +90,7 @@ fn generate_data(account_name: &String) -> NewAuthenticationDataSet {
 		valid_until: valid_until, 
 		policy_base64: signature.base64_policy.clone(),
 		blockchain_index: None,
-        token_hash: "".to_string() 
+        token_hash: hash_token(&token)
 	};
 
 	NewAuthenticationDataSet {
