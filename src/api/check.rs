@@ -7,8 +7,8 @@ use serde_json::{
 };
 use actix_web::{web, HttpResponse, Result, HttpRequest};
 use crate::utils::{
-    errors::AuthenticatorErrors,
-    blockchain::load_authentication_entries,
+	errors::AuthenticatorErrors,
+	blockchain::load_authentication_entries,
 	signature::sign
 };
 use crate::database::{
@@ -18,14 +18,14 @@ use crate::database::{
 
 #[derive(Serialize, Deserialize)]
 pub struct CheckRequest {
-    token: String,
-    account_name: String
+	token: String,
+	account_name: String
 }
 
 pub async fn check(
-    db: web::Data<crate::database::Database>,
-    req: HttpRequest,
-    params: web::Json<CheckRequest>,
+	db: web::Data<crate::database::Database>,
+	req: HttpRequest,
+	params: web::Json<CheckRequest>,
 ) -> Result<HttpResponse, AuthenticatorErrors> {
 	match validate_token_and_fetch_from_blockchain(db, req, &params).await {
 		Ok((db_entry, blockchain_entry)) => {
@@ -45,10 +45,10 @@ async fn validate_token_and_fetch_from_blockchain(
 	params: &web::Json<CheckRequest>
 ) -> Result<(AuthenticationEntry, Value), AuthenticatorErrors> {
 	let authentication_entry_id = req.match_info().get("id").unwrap().to_string();
-    let token = params.token.to_string();
+	let token = params.token.to_string();
 
 	match get_authentication_entry(&db, &authentication_entry_id, &token) {
-        Ok(data) => {
+		Ok(data) => {
 			match data.blockchain_index {
 				Some(blockchain_index) => {
 					match load_authentication_entries(blockchain_index, blockchain_index).await {
@@ -68,9 +68,9 @@ async fn validate_token_and_fetch_from_blockchain(
 				},
 				None => return Err(AuthenticatorErrors::NotStoredBlockchain)
 			}
-        },
-        Err(error) => return Err(error)
-    }
+		},
+		Err(error) => return Err(error)
+	}
 }
 
 async fn verify_credentials(
