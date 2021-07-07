@@ -2,6 +2,7 @@
 use serde::{Deserialize, Serialize};
 use actix_web::{web, HttpResponse, Result};
 use std::time::{SystemTime, UNIX_EPOCH};
+use base64::{encode};
 use uuid::Uuid;
 use crate::utils::{
     blockchain::get_account,
@@ -81,7 +82,8 @@ fn generate_data(account_name: &String) -> NewAuthenticationDataSet {
 	};
 
 	let token = Uuid::new_v4().to_string();
-	let signature = sign(&policy, &secret.to_string(), &token);
+    let b64_policy = encode(serde_json::to_string(&policy).unwrap());
+	let signature = sign(&b64_policy, &secret.to_string(), &token);
 
 	let new_authentication_entry = AuthenticationEntry {
 		id: id.clone(),

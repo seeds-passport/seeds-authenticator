@@ -7,8 +7,13 @@ pub enum AuthenticatorErrors {
     AccountNotFound,
     InvalidId,
     InvalidToken,
-    BlockchainError
+    BlockchainError,
+    NotStoredBlockchain,
+    MismatchedPolicies,
+    ExpiredPolicy,
+    InvalidSignature
 }
+
 #[derive(Debug, Serialize)]
 pub struct MyErrorResponse {
     error_message: String,
@@ -19,16 +24,28 @@ impl AuthenticatorErrors {
     fn error_response(&self) -> String {
         match self {
             AuthenticatorErrors::AccountNotFound => {
-                "Account Not Found".into()
+                "Account not found.".into()
             }
             AuthenticatorErrors::InvalidId => {
-                "Invalid id".into()
+                "Invalid id.".into()
             }
             AuthenticatorErrors::InvalidToken => {
-                "Invalid token".into()
+                "Invalid token.".into()
             }
             AuthenticatorErrors::BlockchainError => {
-                "Error accessing the blockchain".into()
+                "Error accessing the blockchain.".into()
+            },
+            AuthenticatorErrors::NotStoredBlockchain => {
+                "Authentication entry not found on blockchain.".into()
+            }
+            AuthenticatorErrors::MismatchedPolicies => {
+                "The policy stored on the blockchain doesn't match the policy stored on the authenticator.".into()
+            }
+            AuthenticatorErrors::ExpiredPolicy => {
+                "The policy expired.".into()
+            }
+            AuthenticatorErrors::InvalidSignature => {
+                "The signatures didn't match.".into()
             }
         }
     }
@@ -41,6 +58,10 @@ impl error::ResponseError for AuthenticatorErrors {
             AuthenticatorErrors::InvalidId => StatusCode::NOT_FOUND,
             AuthenticatorErrors::InvalidToken => StatusCode::FORBIDDEN,
             AuthenticatorErrors::BlockchainError => StatusCode::SERVICE_UNAVAILABLE,
+            AuthenticatorErrors::NotStoredBlockchain => StatusCode::NOT_FOUND,
+            AuthenticatorErrors::MismatchedPolicies => StatusCode::FORBIDDEN,
+            AuthenticatorErrors::ExpiredPolicy => StatusCode::FORBIDDEN,
+            AuthenticatorErrors::InvalidSignature => StatusCode::FORBIDDEN,
         }
     }
     fn error_response(&self) -> HttpResponse {
