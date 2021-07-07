@@ -1,5 +1,10 @@
 use sled_extensions::{Config, bincode::Tree, DbExt};
-use crate::utils::{settings::Settings};
+use actix_web::{Result, web};
+use crate::utils::{
+    settings::Settings,
+    signature::hash_token,
+    errors::AuthenticatorErrors
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone)]
@@ -36,5 +41,24 @@ pub fn get_db() -> Database {
     Database {
         authentication_entries: db.open_bincode_tree("authentication_entries").unwrap(),
         state: db.open_bincode_tree("state").unwrap()
+    }
+}
+
+pub fn get_authentication_entry(
+    db: &web::Data<crate::database::Database>,
+    id: &String,
+    token: &String
+) -> Result<AuthenticationEntry, AuthenticatorErrors> {
+
+    match db.authentication_entries.get(&id).unwrap() {
+        Some(record) => {
+            if record.token_hash == hash_token(&token) {
+                Ok(record)
+            } else {
+                Err(AuthenticatorErrors::InvalidToken)
+            }
+        }, None => {
+            Err(AuthenticatorErrors::InvalidId)
+        }
     }
 }

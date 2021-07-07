@@ -7,7 +7,6 @@ use std::thread;
 use serde_json::Value;
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::utils::logger::log;
-use uuid::Uuid;
 
 pub fn start(db: crate::database::Database) {
 	thread::spawn(|| {
@@ -105,14 +104,12 @@ fn update_records(db: &crate::database::Database, response: Value) {
 	
 	for value in response_iter {
 		// For each record in the response, we want to check the database for entries, and update its blockchain_index
-		let backend_user_id: Uuid = Uuid::parse_str(value["backend_user_id"].as_str().unwrap()).unwrap();
+		let backend_user_id = value["backend_user_id"].as_str().unwrap();
 		let index = value["id"].as_u64().unwrap();
-
 
 		let _ = db.authentication_entries.fetch_and_update(backend_user_id.as_bytes(), |el| {
 			match el {
 				Some(mut element) => {
-					println!("{:?}", element);
 					element.blockchain_index = Some(index);
 					Some(element)
 				},
