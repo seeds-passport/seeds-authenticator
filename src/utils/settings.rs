@@ -10,7 +10,10 @@ pub struct Authenticator {
 pub struct Blockchain {
     pub host: String,
     pub fetch_limit: u8,
-    pub fetch_timeout: u64
+    pub fetch_timeout: u64,
+    pub request_amount_limit: i64,
+    pub request_total_amount_limit: i64,
+    pub request_time_limit: i64
 }
 
 #[derive(Deserialize,Clone,Debug)]
