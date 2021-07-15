@@ -1,6 +1,6 @@
 
 use serde::{Deserialize, Serialize};
-use actix_web::{web, HttpResponse, Result};
+use actix_web::{web, HttpRequest, HttpResponse, Result};
 use std::time::{SystemTime, UNIX_EPOCH};
 use base64::{encode};
 use uuid::Uuid;
@@ -8,7 +8,8 @@ use crate::utils::{
     blockchain::get_account,
     settings::Settings,
     errors::AuthenticatorErrors,
-    signature::{Policy, sign, Signature, hash_token}
+    signature::{Policy, sign, Signature, hash_token},
+    throttling
 };
 use crate::database::{AuthenticationEntry};
 
@@ -36,35 +37,47 @@ struct NewAuthenticationDataSet {
 }
 
 pub async fn new(
+    request: HttpRequest,
     db: web::Data<crate::database::Database>,
     params: web::Json<AuthenticationRequest>,
     settings: web::Data<Settings>
 ) -> Result<HttpResponse, AuthenticatorErrors> {
 
     let account_name = params.account_name.as_ref().unwrap().to_string();
+    if account_name.len() > 12 {
+        return Err(AuthenticatorErrors::InvalidAccountName);
+    }
 
-    match get_account(&account_name, &settings.blockchain).await {
-        Ok(_) => {
+	let ip: std::net::IpAddr = request.peer_addr().unwrap().ip(); 
 
-			let data = generate_data(&account_name);
-
-            db.authentication_entries
-                .insert(data.policy.id.as_bytes(), data.authentication_entry).unwrap();
-
-            let answer = AnswerNew {
-                id: data.policy.id,
-                account_name: data.policy.account_name,
-                token: data.token,
-                valid_until: data.policy.valid_until, 
-                policy: data.signature.base64_policy,
-                signature: data.signature.signature
-            };
-            Ok(HttpResponse::Ok().json(answer))
-        },
-        Err(_) => {
-            Err(AuthenticatorErrors::AccountNotFound)
+    let is_allowed = throttling::permission(&account_name, ip);
+    if !is_allowed {
+        return Err(AuthenticatorErrors::TooManyUserAccesses);
+    } else {
+        match get_account(&account_name, &settings.blockchain).await {
+            Ok(_) => {
+    
+                let data = generate_data(&account_name);
+    
+                db.authentication_entries
+                    .insert(data.policy.id.as_bytes(), data.authentication_entry).unwrap();
+    
+                let answer = AnswerNew {
+                    id: data.policy.id,
+                    account_name: data.policy.account_name,
+                    token: data.token,
+                    valid_until: data.policy.valid_until, 
+                    policy: data.signature.base64_policy,
+                    signature: data.signature.signature
+                };
+                Ok(HttpResponse::Ok().json(answer))
+            },
+            Err(_) => {
+                Err(AuthenticatorErrors::AccountNotFound)
+            }
         }
     }
+    
 }
 
 fn generate_data(account_name: &String) -> NewAuthenticationDataSet {

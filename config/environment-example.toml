@@ -1,10 +1,15 @@
 [authenticator]
 host = "127.0.0.1:8080"
+throttling_repeater_time = 1000
+throttling_old_entry = 5000
 
 [blockchain]
 host = "https://node.hypha.earth"
 fetch_limit = 50
 fetch_timeout = 1000
+request_amount_limit = 5
+request_total_amount_limit = 10
+request_time_limit = 60
 
 [database]
 path = ".database"

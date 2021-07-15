@@ -1,3 +1,8 @@
+#![allow(unused)]
+
+use crate::utils::{
+    throttling
+};
 mod api;
 mod router;
 mod utils;
@@ -10,6 +15,8 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
 
     let db = database::get_db();
+
+    throttling::clean();
 
     // Let's start the long polling updater
     utils::blockchain_updater::start(db.clone());
