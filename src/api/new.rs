@@ -44,13 +44,15 @@ pub async fn new(
 ) -> Result<HttpResponse, AuthenticatorErrors> {
 
     let account_name = params.account_name.as_ref().unwrap().to_string();
-	let ip: std::net::IpAddr = request.peer_addr().unwrap().ip(); 
-    let request_permission = throttling::permission(&account_name, ip);
+    if account_name.len() > 12 {
+        return Err(AuthenticatorErrors::InvalidAccountName);
+    }
 
-    if request_permission == 1 {
-        Err(AuthenticatorErrors::TooManyAccesses)
-    } else if request_permission == 2 {
-        Err(AuthenticatorErrors::TooManyUserAccesses)
+	let ip: std::net::IpAddr = request.peer_addr().unwrap().ip(); 
+
+    let is_allowed = throttling::permission(&account_name, ip);
+    if !is_allowed {
+        return Err(AuthenticatorErrors::TooManyUserAccesses);
     } else {
         match get_account(&account_name, &settings.blockchain).await {
             Ok(_) => {

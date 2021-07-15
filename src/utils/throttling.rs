@@ -1,5 +1,11 @@
+#![allow(unused)]
+#![feature(entry_insert)]
+
 use serde::{Deserialize, Serialize};
 use chrono::prelude::*;
+use std::thread;
+use tokio::time::{sleep, Duration};
+use std::collections::HashMap;
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
 use crate::utils::{
@@ -16,54 +22,90 @@ pub struct AccessStatistic {
 /*
  * Mutex vector that holds the accesses statistics
  */
-static ACCESS_STATISTICS: Lazy<Mutex<Vec<AccessStatistic>>> = Lazy::new(|| Mutex::new(vec![]));
+static ACCESS_STATISTICS: Lazy<Mutex<HashMap<String, Vec<AccessStatistic>>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 /**
  * Params:
  * 	account_name: account_name sent in the request' params
  * 	ip: the ip of the request
  * Returns:
- * 	0 => the user can do the request
- * 	1 => if the API reached the maximum number of requests
- * 	2 => if the user reached the maximum number of requests allowed
+ * 	true => the user can do the request
+ * 	false => if the user reached the maximum number of requests allowed
  */
-pub fn permission(account_name: &String, ip: std::net::IpAddr) -> i8 {
+pub fn permission(account_name: &String, ip: std::net::IpAddr) -> bool {
 	let settings = Settings::new().unwrap();
 	let current_time: DateTime<Utc> = Utc::now();
+	let access_identifier: String = format!("{}-{}", account_name, &ip.to_string());
+	let access_statistic: AccessStatistic = AccessStatistic {
+		account_name: account_name.clone(),
+		ip_address: ip,
+		timestamp: current_time
+	}; 
 
-	// Add the access to the accesses mutex
-	ACCESS_STATISTICS.lock().unwrap().push(
-		AccessStatistic {
-			account_name: account_name.clone(),
-			ip_address: ip,
-			timestamp: current_time
-		}
-	);
-	
 	let mut amount_user_requests = 0;
-	let mut amount_total_requests = 0;
-	for access in ACCESS_STATISTICS.lock().unwrap().iter() {
-		let timestamp: DateTime<Utc> = access.timestamp;
-		let entry_age = current_time.signed_duration_since(timestamp).num_seconds();
 
-		// If the request was done by the same account_name, the same IP and within the time boundary
-		// increase the ammount of requests
-		if entry_age < settings.blockchain.request_time_limit && account_name == &access.account_name && ip == access.ip_address {
-			amount_user_requests += 1;
-		}
+	// Create a statistic entry
+	// Or push the access to an existing new
+	ACCESS_STATISTICS.lock().unwrap().entry(access_identifier.clone())
+		.or_insert_with(Vec::new)
+		.push(access_statistic);
+	
 
-		// If the request was done within the time boundary
-		// increase the ammount of requests
-		if entry_age < settings.blockchain.request_time_limit {
-			amount_total_requests += 1
-		}
-		
+	// Iterates through a user statistics
+	match ACCESS_STATISTICS.lock().unwrap().get(&access_identifier) {
+		Some(entries) => {
+			for access in entries.iter() {
+				let timestamp: DateTime<Utc> = access.timestamp;
+				let entry_age = current_time.signed_duration_since(timestamp).num_seconds();
+			
+				// If the request was done by the same account_name, the same IP and within the time boundary
+				// increase the ammount of requests
+				if entry_age < settings.blockchain.request_time_limit && account_name == &access.account_name && ip == access.ip_address {
+					amount_user_requests += 1;
+				}
+					
+			}
+		},
+		None => println!("No record found")
 	}
-	if amount_total_requests > settings.blockchain.request_total_amount_limit {
-		return 1;
-	}
+
+	// The user has reached the usage limit
 	if amount_user_requests > settings.blockchain.request_amount_limit  {
-		return 2;
+		return false;
 	}
-	return 0;
+
+	// The user is free to go
+	return true;
+}
+
+pub fn clean () {
+	thread::spawn(|| {
+		let settings = Settings::new().unwrap();
+		use tokio::runtime::Runtime;
+		let rt = Runtime::new().unwrap();
+		rt.spawn(async move {
+			loop {
+				for (identifier, accesses) in ACCESS_STATISTICS.lock().unwrap().iter_mut() {
+					let current_time: DateTime<Utc> = Utc::now();
+					let mut new_accesses = vec![];
+					for access in accesses.iter() {
+						let timestamp: DateTime<Utc> = access.timestamp;
+						let entry_age = current_time.signed_duration_since(timestamp).num_seconds();
+						if entry_age < settings.authenticator.throttling_old_entry {
+							new_accesses.push(access.to_owned());
+						}
+							
+					}
+					*accesses = new_accesses;
+				}
+				sleep(Duration::from_millis(settings.authenticator.throttling_repeater_time)).await;
+			}
+		});
+
+		// This next loop is needed to keep this thread alive.
+		loop{};
+	});
+
+
+	
 }

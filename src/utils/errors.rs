@@ -13,7 +13,7 @@ pub enum AuthenticatorErrors {
     ExpiredPolicy,
     InvalidSignature,
     TooManyUserAccesses,
-    TooManyAccesses
+    InvalidAccountName
 }
 
 #[derive(Debug, Serialize)]
@@ -52,8 +52,8 @@ impl AuthenticatorErrors {
             AuthenticatorErrors::TooManyUserAccesses => {
                 "The user you are trying to access with have too many recent requests.".into()
             }
-            AuthenticatorErrors::TooManyAccesses => {
-                "Our service have too many accesses, please try again later.".into()
+            AuthenticatorErrors::InvalidAccountName => {
+                "Your account name is invalid".into()
             }
         }
     }
@@ -71,7 +71,7 @@ impl error::ResponseError for AuthenticatorErrors {
             AuthenticatorErrors::ExpiredPolicy => StatusCode::FORBIDDEN,
             AuthenticatorErrors::InvalidSignature => StatusCode::FORBIDDEN,
             AuthenticatorErrors::TooManyUserAccesses => StatusCode::FORBIDDEN,
-            AuthenticatorErrors::TooManyAccesses => StatusCode::FORBIDDEN,
+            AuthenticatorErrors::InvalidAccountName => StatusCode::FORBIDDEN,
         }
     }
     fn error_response(&self) -> HttpResponse {

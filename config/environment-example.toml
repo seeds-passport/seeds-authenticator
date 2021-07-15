@@ -1,5 +1,7 @@
 [authenticator]
 host = "127.0.0.1:8080"
+throttling_repeater_time = 1000
+throttling_old_entry = 5000
 
 [blockchain]
 host = "https://node.hypha.earth"

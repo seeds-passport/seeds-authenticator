@@ -3,7 +3,9 @@ use serde::{Deserialize};
 
 #[derive(Deserialize,Clone,Debug)]
 pub struct Authenticator {
-    pub host: String
+    pub host: String,
+    pub throttling_repeater_time: u64,
+    pub throttling_old_entry: i64
 }
 
 #[derive(Deserialize,Clone,Debug)]
@@ -13,7 +15,7 @@ pub struct Blockchain {
     pub fetch_timeout: u64,
     pub request_amount_limit: i64,
     pub request_total_amount_limit: i64,
-    pub request_time_limit: i64
+    pub request_time_limit: i64,
 }
 
 #[derive(Deserialize,Clone,Debug)]
