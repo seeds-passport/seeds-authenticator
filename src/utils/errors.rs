@@ -50,10 +50,10 @@ impl AuthenticatorErrors {
                 "The signatures didn't match.".into()
             }
             AuthenticatorErrors::TooManyUserAccesses => {
-                "The user you are trying to access with have too many recent requests.".into()
+                "Too many requests. Try again soon.".into()
             }
             AuthenticatorErrors::InvalidAccountName => {
-                "Your account name is invalid".into()
+                "Your account name is invalid.".into()
             }
         }
     }
@@ -70,7 +70,7 @@ impl error::ResponseError for AuthenticatorErrors {
             AuthenticatorErrors::MismatchedPolicies => StatusCode::FORBIDDEN,
             AuthenticatorErrors::ExpiredPolicy => StatusCode::FORBIDDEN,
             AuthenticatorErrors::InvalidSignature => StatusCode::FORBIDDEN,
-            AuthenticatorErrors::TooManyUserAccesses => StatusCode::FORBIDDEN,
+            AuthenticatorErrors::TooManyUserAccesses => StatusCode::TOO_MANY_REQUESTS,
             AuthenticatorErrors::InvalidAccountName => StatusCode::FORBIDDEN,
         }
     }
