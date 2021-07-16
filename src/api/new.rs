@@ -1,4 +1,3 @@
-
 use serde::{Deserialize, Serialize};
 use actix_web::{web, HttpRequest, HttpResponse, Result};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -58,8 +57,8 @@ pub async fn new(
             Ok(_) => {
     
                 let data = generate_data(&account_name);
-    
-                db.authentication_entries
+
+                db.waiting_for_confirmation
                     .insert(data.policy.id.as_bytes(), data.authentication_entry).unwrap();
     
                 let answer = AnswerNew {

@@ -3,6 +3,7 @@ use crate::utils::{
 	logger::log,
 	settings::Settings
 };
+use crate::database;
 use serde_json::Value;
 use std::{
 	thread,
@@ -102,22 +103,42 @@ fn get_next_blockchain_id(db: &crate::database::Database) -> u64 {
 }
 
 fn update_records(db: &crate::database::Database, response: Value) {
-	let response_iter = response["rows"].as_array().unwrap(); 
-	
+	let response_iter = response["rows"].as_array().unwrap();
 	for value in response_iter {
 		// For each record in the response, we want to check the database for entries, and update its blockchain_index
 		let backend_user_id = value["backend_user_id"].as_str().unwrap();
 		let index = value["id"].as_u64().unwrap();
 
-		let _ = db.authentication_entries.fetch_and_update(backend_user_id.as_bytes(), |el| {
-			match el {
-				Some(mut element) => {
-					element.blockchain_index = Some(index);
-					Some(element)
-				},
-				None => None
+		match database::get_waiting_for_confirmation(db, &backend_user_id.to_string()) {
+			Ok(mut entry) => {
+				// Update the index
+				entry.blockchain_index = Some(index);
+
+				// Remove from the waiting_for_confirmation Tree
+				db.waiting_for_confirmation.remove(backend_user_id.as_bytes());
+
+				// Proceed to add or update the authentication_entries entry
+				let _ = db.authentication_entries.fetch_and_update(backend_user_id.as_bytes(), |el| {
+					match el {
+						Some(mut el) => {
+							// Update the authentication_entries entry if it exists
+							el = entry.clone();
+							return Some(el)
+						},
+						None => {
+							// Insert in the authentication_entries Tree if it does not exists
+							// This should be always the case
+							db.authentication_entries
+									.insert(backend_user_id.as_bytes(), entry.clone()).unwrap();
+							return Some(entry.clone());
+						}
+					}
+				});
+			},
+			Err(error) => {
+				log(format!("Error updating database records for backend_user_id: {:?}", backend_user_id));
 			}
-		});
+		}
 	}
 }
 
