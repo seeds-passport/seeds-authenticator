@@ -1,19 +1,25 @@
 use crate::utils::{
-	settings::Settings,
-	blockchain::load_authentication_entries
+	blockchain::load_authentication_entries,
+	logger::log,
+	settings::Settings
 };
-use tokio::time::{sleep, Duration};
-use std::thread;
 use serde_json::Value;
-use std::time::{SystemTime, UNIX_EPOCH};
-use crate::utils::logger::log;
+use std::{
+	thread,
+	time::{SystemTime, UNIX_EPOCH},
+	time
+};
+use tokio::{
+	task,
+	time::{sleep, Duration}
+};
 
 pub fn start(db: crate::database::Database) {
-	thread::spawn(|| {
-		let settings = Settings::new().unwrap();
-		use tokio::runtime::Runtime;
-		let rt = Runtime::new().unwrap();
-		rt.spawn(async move {
+	let settings = Settings::new().unwrap();
+	use tokio::runtime::Runtime;
+	let rt = Runtime::new().unwrap();
+	loop {
+		rt.block_on(async {
 			
 			let mut last_blockchain_index = get_next_blockchain_id(&db);
 			
@@ -83,11 +89,7 @@ pub fn start(db: crate::database::Database) {
 				sleep(Duration::from_millis(settings.blockchain.fetch_timeout)).await;
 			}
 		});
-
-		// This next loop is needed to keep this thread alive.
-		loop{};
-   });
-
+	};
 }
 
 fn get_next_blockchain_id(db: &crate::database::Database) -> u64 {

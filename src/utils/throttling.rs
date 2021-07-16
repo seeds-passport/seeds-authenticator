@@ -1,16 +1,17 @@
-#![allow(unused)]
-#![feature(entry_insert)]
-
-use serde::{Deserialize, Serialize};
-use chrono::prelude::*;
-use std::thread;
-use tokio::time::{sleep, Duration};
-use std::collections::HashMap;
-use std::sync::Mutex;
-use once_cell::sync::Lazy;
 use crate::utils::{
 	settings::Settings
 };
+use chrono::prelude::*;
+use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
+use std::{
+	collections::HashMap,
+	sync::Mutex,
+	thread,
+	time
+};
+use tokio::time::{sleep, Duration};
+
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AccessStatistic {
@@ -79,33 +80,25 @@ pub fn permission(account_name: &String, ip: std::net::IpAddr) -> bool {
 }
 
 pub fn clean () {
-	thread::spawn(|| {
-		let settings = Settings::new().unwrap();
-		use tokio::runtime::Runtime;
-		let rt = Runtime::new().unwrap();
-		rt.spawn(async move {
-			loop {
-				for (identifier, accesses) in ACCESS_STATISTICS.lock().unwrap().iter_mut() {
-					let current_time: DateTime<Utc> = Utc::now();
-					let mut new_accesses = vec![];
-					for access in accesses.iter() {
-						let timestamp: DateTime<Utc> = access.timestamp;
-						let entry_age = current_time.signed_duration_since(timestamp).num_seconds();
-						if entry_age < settings.authenticator.throttling_old_entry {
-							new_accesses.push(access.to_owned());
-						}
-							
+	let settings = Settings::new().unwrap();
+	use tokio::runtime::Runtime;
+	let rt = Runtime::new().unwrap();
+	loop {
+		rt.block_on(async {
+			for (identifier, accesses) in ACCESS_STATISTICS.lock().unwrap().iter_mut() {
+				let current_time: DateTime<Utc> = Utc::now();
+				let mut new_accesses = vec![];
+				for access in accesses.iter() {
+					let timestamp: DateTime<Utc> = access.timestamp;
+					let entry_age = current_time.signed_duration_since(timestamp).num_seconds();
+					if entry_age < settings.authenticator.throttling_old_entry {
+						new_accesses.push(access.to_owned());
 					}
-					*accesses = new_accesses;
+						
 				}
-				sleep(Duration::from_millis(settings.authenticator.throttling_repeater_time)).await;
+				*accesses = new_accesses;
 			}
+			sleep(Duration::from_millis(settings.authenticator.throttling_repeater_time)).await;
 		});
-
-		// This next loop is needed to keep this thread alive.
-		loop{};
-	});
-
-
-	
+	};
 }
