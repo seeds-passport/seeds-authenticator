@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone)]
 pub struct Database {
+    pub waiting_for_confirmation: Tree<AuthenticationEntry>,
     pub authentication_entries: Tree<AuthenticationEntry>,
     pub state: Tree<State>
 }
@@ -41,6 +42,7 @@ pub fn get_db() -> Database {
         .unwrap();
 
     Database {
+        waiting_for_confirmation: db.open_bincode_tree("waiting_for_confirmation").unwrap(),
         authentication_entries: db.open_bincode_tree("authentication_entries").unwrap(),
         state: db.open_bincode_tree("state").unwrap()
     }
@@ -62,5 +64,15 @@ pub fn get_authentication_entry(
         }, None => {
             Err(AuthenticatorErrors::InvalidId)
         }
+    }
+}
+pub fn get_waiting_for_confirmation(
+    db: &crate::database::Database,
+    id: &String
+) -> Result<AuthenticationEntry, AuthenticatorErrors> {
+
+    match db.waiting_for_confirmation.get(&id).unwrap() {
+        Some(record) => Ok(record), 
+        None => Err(AuthenticatorErrors::InvalidId)
     }
 }
