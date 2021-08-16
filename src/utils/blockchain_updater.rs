@@ -108,7 +108,6 @@ fn update_records(db: &crate::database::Database, response: Value) {
 		// For each record in the response, we want to check the database for entries, and update its blockchain_index
 		let backend_user_id = value["backend_user_id"].as_str().unwrap();
 		let index = value["id"].as_u64().unwrap();
-
 		match database::get_waiting_for_confirmation(db, &backend_user_id.to_string()) {
 			Ok(mut entry) => {
 				// Update the index
@@ -136,7 +135,7 @@ fn update_records(db: &crate::database::Database, response: Value) {
 				});
 			},
 			Err(error) => {
-				log(format!("Error updating database records for backend_user_id: {:?}", backend_user_id));
+				log(format!("User {:?} does not exist on the database.", backend_user_id));
 			}
 		}
 	}
