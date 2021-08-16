@@ -135,7 +135,7 @@ fn update_records(db: &crate::database::Database, response: Value) {
 				});
 			},
 			Err(error) => {
-				log(format!("User {:?} does not exist on the database.", backend_user_id));
+				log(format!("Authentication Entry {:?} does not exist on the database.", backend_user_id));
 			}
 		}
 	}
