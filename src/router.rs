@@ -14,4 +14,8 @@ pub fn init_routes(cfg: &mut ServiceConfig) {
     cfg.service(
         web::resource("/api/v1/check/{id}").route(web::post().to(api::check::check)),
 	);
+
+    cfg.service(
+        web::resource("/api/v1/info/{id}").route(web::post().to(api::info::info)),
+	);
 }

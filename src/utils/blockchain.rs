@@ -1,7 +1,6 @@
 use actix_web::client::{Client};
-use crate::utils::settings::Blockchain;
 use serde::{Deserialize, Serialize};
-use crate::utils::{settings::Settings};
+use crate::utils::{settings::Settings, settings::Blockchain, helpers::name_bytes_to_u64};
 use ureq;
 use std::str;
 use serde_json::Value;
@@ -56,6 +55,31 @@ pub async fn load_authentication_entries(lower_bound: u64, upper_bound: u64) -> 
 	    "limit": i64::from(settings.blockchain.fetch_limit),
 	    "reverse": false,
 	    "show_payer": false
+	}));
+
+	match resp {
+		Ok(response) => {
+			Ok(serde_json::from_str(&response.into_string().unwrap()).unwrap())
+		},
+		Err(_) => {
+			Err("Error loading from blockchain")
+		}
+	}
+
+}
+
+pub async fn load_user_data(account_name: &String) -> Result<Value, &'static str> {
+	let settings = Settings::new().unwrap();
+	let account_name_as_u64 = name_bytes_to_u64(account_name.bytes()).unwrap();
+	let resp = ureq::post(&format!("{}/v1/chain/get_table_rows", settings.blockchain.host))
+	.send_json(ureq::json!({
+		"json": true,
+		"code": "accts.seeds",
+		"scope": "accts.seeds",
+		"lower_bound": account_name_as_u64,
+		"upper_bound": account_name_as_u64,
+		"limit": 1,
+		"table": "users"
 	}));
 
 	match resp {
