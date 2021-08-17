@@ -2,7 +2,11 @@ use actix_web::{web, HttpResponse, Result, HttpRequest};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use crate::utils::errors::AuthenticatorErrors;
-use crate::utils::validate::{validate_token_and_fetch_from_blockchain, verify_credentials, CheckRequest};
+use crate::utils::validate::{
+	validate_token_and_fetch_from_blockchain, 
+	verify_credentials, 
+	CheckRequest
+};
 
 pub async fn check(
 	db: web::Data<crate::database::Database>,
