@@ -27,11 +27,12 @@ jobs:
       - name: Deploy with rsync
         run: >-
           rsync -avz ${{ github.workspace }} ubuntu@${{ secrets.SSH_HOST
-          }}:/home/ubuntu/seeds/authenticator
+          }}:/home/ubuntu/seeds
       - name: Build rust
         uses: fifsky/ssh-action@master
         with:
           command: |
+            cd /home/ubuntu/seeds/seeds-authenticator
             cargo build
           host: ${{ secrets.SSH_HOST }}
           user: ubuntu
