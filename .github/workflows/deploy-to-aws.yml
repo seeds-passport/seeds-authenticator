@@ -18,5 +18,5 @@ jobs:
         run: 'ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts'
       - name: Deploy with rsync
         run: >-
-          rsync -avz ${{ github.workspace }} ubuntu@${{ secrets.SSH_HOST
+          rsync -avz ${{ github.workspace }}/ ubuntu@${{ secrets.SSH_HOST
           }}:/home/ubuntu/seeds/authenticator
