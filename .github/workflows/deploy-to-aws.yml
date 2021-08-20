@@ -33,7 +33,9 @@ jobs:
         with:
           command: |
             cd /home/ubuntu/seeds/seeds-authenticator
-            cargo build
+            cargo build --release
+            cp -r ./config ./target/release
+            mv ./target/release/config/environment-example.toml ./target/release/config/environment.toml
           host: ${{ secrets.SSH_HOST }}
           user: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY}}
