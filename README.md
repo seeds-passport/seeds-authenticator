@@ -40,4 +40,4 @@ In the table below, all the available paths are explained:
 
 ## License
 
-[GPL](https://choosealicense.com/licenses/gpl-3.0/)
+[MIT](https://choosealicense.com/licenses/mit/)
