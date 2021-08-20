@@ -21,6 +21,7 @@ jobs:
         with:
           command: |
             rm -rf /home/ubuntu/seeds/seeds-authenticator
+            sudo systemctl stop seeds-authenticator
           host: ${{ secrets.SSH_HOST }}
           user: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY}}
@@ -36,6 +37,7 @@ jobs:
             cargo build --release
             cp -r ./config ./target/release
             mv ./target/release/config/environment-example.toml ./target/release/config/environment.toml
+            sudo systemctl start seeds-authenticator
           host: ${{ secrets.SSH_HOST }}
           user: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY}}
