@@ -1,0 +1,29 @@
+[Unit]
+Description=Authenticator
+ConditionPathExists=/home/ubuntu/seeds/seeds-authenticator/target/release
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+LimitNOFILE=1024
+
+Restart=on-failure
+RestartSec=10
+startLimitIntervalSec=60
+
+WorkingDirectory=/home/ubuntu/seeds/seeds-authenticator/target/release
+ExecStart=/home/ubuntu/seeds/seeds-authenticator/target/release/authenticator
+
+# make sure log directory exists and owned by syslog
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p /var/log/seeds-authenticator
+ExecStartPre=/bin/chown syslog:adm /var/log/seeds-authenticator
+ExecStartPre=/bin/chmod 755 /var/log/seeds-authenticator
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=seeds-authenticator
+
+[Install]
+WantedBy=multi-user.target
