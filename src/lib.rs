@@ -1,7 +1,7 @@
 #![allow(unused)]
-use crate::utils::{
-    throttling
-};
+use crate::utils::throttling;
+use lazy_static::lazy_static;
+use std::sync::{Arc, Mutex};
 use actix_web::dev::Server;
 use std::{thread, time};
 use tokio::{
@@ -15,9 +15,18 @@ mod router;
 pub mod utils;
 mod web;
 
+lazy_static! {
+    static ref INITIATED: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+}
+
 pub async fn run() -> Result<Server, std::io::Error> {
-    std::env::set_var("RUST_LOG", "actix_web=info,actix_redis=info");
-    env_logger::init();
+    let mut initiated = INITIATED.lock().unwrap();
+    if *initiated == false {
+        std::env::set_var("RUST_LOG", "actix_web=info,actix_redis=info");
+        env_logger::init();
+        *initiated = true;
+        
+    }
 
     let db = database::get_db();
 
