@@ -13,3 +13,6 @@ request_time_limit = 60
 
 [database]
 path = ".database"
+
+[testing]
+account_name = "imprvsociety"

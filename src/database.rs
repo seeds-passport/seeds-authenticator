@@ -1,13 +1,14 @@
 use sled_extensions::{Config, bincode::Tree, DbExt};
 use actix_web::{Result, web};
+use serde::{Deserialize, Serialize};
 use chrono::prelude::*;
-
+use lazy_static::lazy_static;
+use std::sync::{Arc, Mutex};
 use crate::utils::{
     settings::Settings,
     signature::hash_token,
     errors::AuthenticatorErrors
 };
-use serde::{Deserialize, Serialize};
 
 #[derive(Clone)]
 pub struct Database {
@@ -33,21 +34,23 @@ pub struct State {
     pub last_updated_at: u64,
 }
 
-pub fn get_db() -> Database {
-    let settings = Settings::new().unwrap();
-
-    let db = Config::default()
-        .path(settings.database.path.to_owned())
+lazy_static! {
+    static ref DATABASE: Arc<Mutex<sled_extensions::Db>> = Arc::new(Mutex::new(
+        Config::default()
+        .path(Settings::new().unwrap().database.path.to_owned())
         .open()
-        .unwrap();
+        .unwrap()
+    ));
+}
 
+pub fn get_db() -> Database {
+    let mut db = DATABASE.lock().unwrap();
     Database {
         waiting_for_confirmation: db.open_bincode_tree("waiting_for_confirmation").unwrap(),
         authentication_entries: db.open_bincode_tree("authentication_entries").unwrap(),
         state: db.open_bincode_tree("state").unwrap()
     }
 }
-
 pub fn get_authentication_entry(
     db: &web::Data<crate::database::Database>,
     id: &String,
