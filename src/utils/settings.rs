@@ -25,7 +25,9 @@ pub struct Database {
 
 #[derive(Deserialize,Clone,Debug)]
 pub struct Testing {
-    pub account_name: String
+    pub account_name: String,
+    pub invalid_token: String,
+    pub invalid_backend_id: String
 }
 
 #[derive(Deserialize,Clone,Debug)]
