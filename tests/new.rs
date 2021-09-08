@@ -6,7 +6,7 @@ use authenticator::{self, utils::settings::Settings};
 
 #[tokio::main]
 async fn spawn_app() {
-    let _ = spawn(authenticator::run().await.expect("Error spawning the API."));
+    let _ = spawn(authenticator::run(true).await.expect("Error spawning the API."));
 }
 
 #[actix_rt::test]
