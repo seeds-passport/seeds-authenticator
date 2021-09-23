@@ -1,19 +1,33 @@
 use rocket::serde::json::{Json, Value, json};
 use rocket::response::status;
 use crate::{
-    utils::validate::CheckRequest,
-    database::{Database, get_authentication_entry}
+    utils::{
+        validate::{
+            CheckRequest, validate_token_and_fetch_from_blockchain, verify_credentials
+        },
+        blockchain::load_user_data
+    },
+    database::Database
 };
 use rocket::http::Status;
 
 #[post("/<id>", format = "json", data = "<check_request>")]
 async fn info(db: Database, check_request: Json<CheckRequest>, id: &str) -> status::Custom<Value> {
-    match get_authentication_entry(db.clone(), &id.to_string(), &check_request.token) {
-        Ok(_) => {
-            db.authentication_entries.remove(id).unwrap();
-            return status::Custom(
-                Status::Accepted,
-                json!({ "message": {"status": "ok"} }));
+    match validate_token_and_fetch_from_blockchain(db, id, check_request.token.clone()).await {
+        Ok((db_entry, blockchain_entry)) => {
+            match verify_credentials(db_entry, blockchain_entry, check_request.token.clone()).await {
+                Ok(_) => {
+                    let user = load_user_data(&check_request.account_name).await.unwrap();
+                    return status::Custom(
+                        Status::Accepted,
+                        json!({ "message": user  }));
+                }
+                Err(error) => {
+                    return status::Custom(
+                        error.status_code(),
+                        json!({ "message": error.get_error() }));
+                }
+            }
         }
         Err(error) => {
             return status::Custom(
