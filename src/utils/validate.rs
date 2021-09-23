@@ -1,11 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::str;
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde_json::{
-	json,
-	Value
-};
-use rocket::serde::json::{Json};
+use serde_json::Value;
 use crate::utils::{
 	errors::AuthenticatorErrors,
 	blockchain::load_authentication_entries,

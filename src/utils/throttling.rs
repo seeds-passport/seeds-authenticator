@@ -7,8 +7,6 @@ use serde::{Deserialize, Serialize};
 use std::{
 	collections::HashMap,
 	sync::Mutex,
-	thread,
-	time
 };
 use tokio::time::{sleep, Duration};
 
@@ -85,7 +83,7 @@ pub fn clean () {
 	let rt = Runtime::new().unwrap();
 	loop {
 		rt.block_on(async {
-			for (identifier, accesses) in ACCESS_STATISTICS.lock().unwrap().iter_mut() {
+			for (_identifier, accesses) in ACCESS_STATISTICS.lock().unwrap().iter_mut() {
 				let current_time: DateTime<Utc> = Utc::now();
 				let mut new_accesses = vec![];
 				for access in accesses.iter() {

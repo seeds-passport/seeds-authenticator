@@ -1,23 +1,8 @@
 use rocket::serde::json::{Json, Value, json};
 use rocket::serde::{Serialize, Deserialize};
-use rocket::response::{content, status, Responder, Response};
-use rocket::request::Request;
-use rocket::State;
-use crate::{
-    utils::{
-        errors::AuthenticatorErrors,
-        throttling,
-        blockchain::get_account,
-        signature::{Policy, sign, Signature, hash_token},
-    },
-    database::{self, AuthenticationEntry, Database, get_authentication_entry}
-};
-use base64::{encode};
-use std::io::Cursor;
+use rocket::response::status;
+use crate::database::{Database, get_authentication_entry};
 use rocket::http::Status;
-use std::net::{SocketAddr, IpAddr};
-use uuid::Uuid;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Serialize, Deserialize)]
 #[serde(crate = "rocket::serde")]

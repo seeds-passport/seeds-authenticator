@@ -5,15 +5,8 @@ use crate::utils::{
 };
 use crate::database;
 use serde_json::Value;
-use std::{
-	thread,
-	time::{SystemTime, UNIX_EPOCH},
-	time
-};
-use tokio::{
-	task,
-	time::{sleep, Duration}
-};
+use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::time::{sleep, Duration};
 
 pub fn start(db: crate::database::Database) {
 	let settings = Settings::new().unwrap();
@@ -114,7 +107,7 @@ fn update_records(db: crate::database::Database, response: Value) {
 				entry.blockchain_index = Some(index);
 
 				// Remove from the waiting_for_confirmation Tree
-				db.waiting_for_confirmation.remove(backend_user_id.as_bytes());
+				let _ = db.waiting_for_confirmation.remove(backend_user_id.as_bytes());
 
 				// Proceed to add or update the authentication_entries entry
 				let _ = db.authentication_entries.fetch_and_update(backend_user_id.as_bytes(), |el| {
@@ -134,7 +127,7 @@ fn update_records(db: crate::database::Database, response: Value) {
 					}
 				});
 			},
-			Err(error) => {
+			Err(_error) => {
 				log(format!("Authentication Entry {:?} does not exist on the database.", backend_user_id));
 			}
 		}

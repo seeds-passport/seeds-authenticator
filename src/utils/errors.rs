@@ -1,8 +1,6 @@
 use serde::Serialize;
 use std::fmt;
-use rocket::Response;
 use rocket::http::Status;
-use rocket::response::Body;
 
 #[derive(Debug, Serialize)]
 pub enum AuthenticatorErrors {
@@ -25,7 +23,7 @@ pub struct MyErrorResponse {
 
 impl std::error::Error for AuthenticatorErrors {}
 impl std::io::Read for MyErrorResponse {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+    fn read(&mut self, _buf: &mut [u8]) -> std::io::Result<usize> {
         todo!()
     }
 }

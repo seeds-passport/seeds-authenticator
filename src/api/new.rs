@@ -1,8 +1,6 @@
 use rocket::serde::json::{Json, Value, json};
 use rocket::serde::{Serialize, Deserialize};
-use rocket::response::{content, status, Responder, Response};
-use rocket::request::Request;
-use rocket::State;
+use rocket::response::status;
 use crate::{
     utils::{
         errors::AuthenticatorErrors,
@@ -10,10 +8,9 @@ use crate::{
         blockchain::get_account,
         signature::{Policy, sign, Signature, hash_token},
     },
-    database::{self, AuthenticationEntry, Database}
+    database::{AuthenticationEntry, Database}
 };
 use base64::{encode};
-use std::io::Cursor;
 use rocket::http::Status;
 use std::net::{SocketAddr, IpAddr};
 use uuid::Uuid;

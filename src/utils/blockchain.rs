@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::utils::{settings::Settings, settings::Blockchain, helpers::name_bytes_to_u64};
+use crate::utils::{settings::Settings, helpers::name_bytes_to_u64};
 use ureq;
 use std::str;
 use serde_json::Value;

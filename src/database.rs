@@ -1,11 +1,6 @@
 use sled_extensions::{Config, bincode::Tree, DbExt};
 use serde::{Deserialize, Serialize};
-use rocket::State;
-use rocket::http::Status;
-use rocket::request::{self, FromRequest, Request, Outcome};
-use std::borrow::Borrow;
-
-
+use rocket::request::{self, FromRequest, Request};
 use crate::utils::{
     errors::AuthenticatorErrors,
     settings::Settings,
