@@ -12,7 +12,7 @@ use rocket::http::Status;
 
 #[post("/<id>", format = "json", data = "<check_request>")]
 async fn check(db: Database, check_request: Json<CheckRequest>, id: &str) -> status::Custom<Value> {
-    match validate_token_and_fetch_from_blockchain(db.clone(), id, check_request.token.clone()).await {
+    match validate_token_and_fetch_from_blockchain(db, id, check_request.token.clone()).await {
         Ok((db_entry, blockchain_entry)) => {
             match verify_credentials(db_entry, blockchain_entry, check_request.token.clone()).await {
                 Ok(_) => {
