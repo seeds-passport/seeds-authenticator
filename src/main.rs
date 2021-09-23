@@ -12,8 +12,9 @@ use crate::utils::throttling;
 #[launch]
 fn rocket() -> _ {
     let db = database::get_db();
-    spawn_services(db.clone());
+    //spawn_services(db.clone());
     rocket::build()
+        .manage(spawn_services(db.clone()))
         .manage(db)
         .attach(api::new::stage())
         .attach(api::invalidate::stage())
