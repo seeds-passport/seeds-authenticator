@@ -19,13 +19,13 @@ lazy_static! {
     static ref INITIATED: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
 }
 
-pub async fn run(is_test: bool) -> Result<Server, std::io::Error> {
+pub async fn run() -> Result<Server, std::io::Error> {
     let mut initiated = INITIATED.lock().unwrap();
     if *initiated == false {
-        std::env::set_var("IS_TEST", is_test.to_string());
         std::env::set_var("RUST_LOG", "actix_web=info,actix_redis=info");
         env_logger::init();
         *initiated = true;
+        
     }
 
     let db = database::get_db();

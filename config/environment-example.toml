@@ -16,5 +16,3 @@ path = ".database"
 
 [testing]
 account_name = "imprvsociety"
-invalid_token = "invalid-token-for-correct-testing"
-invalid_backend_id ="invalid-backend-id-for-correct-testing"

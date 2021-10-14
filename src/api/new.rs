@@ -41,10 +41,12 @@ pub async fn new(
     params: web::Json<AuthenticationRequest>,
     settings: web::Data<Settings>
 ) -> Result<HttpResponse, AuthenticatorErrors> {
+
     let account_name = params.account_name.as_ref().unwrap().to_string();
     if account_name.len() > 12 {
         return Err(AuthenticatorErrors::InvalidAccountName);
     }
+
 	let ip: std::net::IpAddr = request.peer_addr().unwrap().ip(); 
 
     let is_allowed = throttling::permission(&account_name, ip);
