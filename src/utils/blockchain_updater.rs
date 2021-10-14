@@ -105,7 +105,7 @@ fn update_records(db: crate::database::Database, response: Value) {
 			Ok(mut entry) => {
 				// Update the index
 				entry.blockchain_index = Some(index);
-				entry.account_name = value["account"].to_string();
+				entry.account_name = value["account"].as_str().unwrap().to_string();
 
 				// Remove from the waiting_for_confirmation Tree
 				let _ = db.waiting_for_confirmation.remove(backend_user_id.as_bytes());

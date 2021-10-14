@@ -15,8 +15,7 @@ use crate::database::{
 
 #[derive(Serialize, Deserialize)]
 pub struct CheckRequest {
-	pub token: String,
-	pub account_name: String
+	pub token: String
 }
 
 pub async fn validate_token_and_fetch_from_blockchain(

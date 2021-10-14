@@ -16,9 +16,13 @@ use rocket::http::Status;
 async fn info(db: Database, check_request: Json<CheckRequest>, id: &str) -> status::Custom<Value> {
     match validate_token_and_fetch_from_blockchain(db, id, check_request.token.clone()).await {
         Ok((db_entry, blockchain_entry)) => {
-            match verify_credentials(db_entry, blockchain_entry, check_request.token.clone()).await {
+            match verify_credentials(
+                db_entry.clone(),
+                blockchain_entry,
+                check_request.token.clone()
+            ).await {
                 Ok(_) => {
-                    let user = load_user_data(&check_request.account_name).await.unwrap();
+                    let user = load_user_data(&db_entry.account_name.to_string()).await.unwrap();
                     return status::Custom(
                         Status::Accepted,
                         json!({ "message": user  }));
