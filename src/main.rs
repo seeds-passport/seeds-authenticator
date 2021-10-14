@@ -2,5 +2,5 @@ use authenticator::run;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    run().await?.await
+    run(false).await?.await
 }

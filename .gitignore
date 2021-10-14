@@ -4,3 +4,5 @@ config/environment.toml
 .env
 .database
 docs/book
+.idea
+Cargo.lock
