@@ -7,6 +7,7 @@ use crate::utils::{
 	blockchain::load_authentication_entries,
 	signature::sign
 };
+use crate::database;
 use crate::database::{
 	Database,
 	AuthenticationEntry,
@@ -30,7 +31,7 @@ pub async fn validate_token_and_fetch_from_blockchain(
 			match data.blockchain_index {
 				Some(blockchain_index) => {
 					match load_authentication_entries(blockchain_index, blockchain_index).await {
-						Ok(response) => return Ok(
+						Ok(response) => Ok(
 							(
 								data,
 								response["rows"]
@@ -41,13 +42,18 @@ pub async fn validate_token_and_fetch_from_blockchain(
 									.clone()
 							)
 						),
-						Err(_) => return Err(AuthenticatorErrors::BlockchainError)
+						Err(_) => Err(AuthenticatorErrors::BlockchainError)
 					}
 				},
-				None => return Err(AuthenticatorErrors::NotStoredBlockchain)
+				None => Err(AuthenticatorErrors::NotStoredBlockchain)
 			}
 		},
-		Err(error) => return Err(error)
+		Err(error) => {
+			match database::get_waiting_for_confirmation(db.clone(), &authentication_entry_id.to_string()) {
+				Ok(_) => Err(AuthenticatorErrors::NotStoredBlockchain),
+				Err(_) => Err(error)
+			}
+		}
 	}
 }
 
