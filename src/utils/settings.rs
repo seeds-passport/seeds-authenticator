@@ -24,10 +24,16 @@ pub struct Database {
 }
 
 #[derive(Deserialize,Clone,Debug)]
+pub struct Testing {
+    pub account_name: String
+}
+
+#[derive(Deserialize,Clone,Debug)]
 pub struct Settings {
 	pub authenticator: Authenticator,
 	pub blockchain: Blockchain,
     pub database: Database,
+    pub testing: Testing,
 }
 
 impl Settings {

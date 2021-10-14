@@ -1,6 +1,6 @@
-use actix_web::{error, http::StatusCode, HttpResponse, Result};
 use serde::Serialize;
 use std::fmt;
+use rocket::http::Status;
 
 #[derive(Debug, Serialize)]
 pub enum AuthenticatorErrors {
@@ -20,10 +20,30 @@ pub enum AuthenticatorErrors {
 pub struct MyErrorResponse {
     error_message: String,
 }
+
 impl std::error::Error for AuthenticatorErrors {}
+impl std::io::Read for MyErrorResponse {
+    fn read(&mut self, _buf: &mut [u8]) -> std::io::Result<usize> {
+        todo!()
+    }
+}
 
 impl AuthenticatorErrors {
-    fn error_response(&self) -> String {
+    pub fn status_code(&self) -> Status {
+        match self {
+            AuthenticatorErrors::AccountNotFound => Status::NotFound,
+            AuthenticatorErrors::InvalidId => Status::NotFound,
+            AuthenticatorErrors::InvalidToken => Status::Forbidden,
+            AuthenticatorErrors::BlockchainError => Status::ServiceUnavailable,
+            AuthenticatorErrors::NotStoredBlockchain => Status::NotFound,
+            AuthenticatorErrors::MismatchedPolicies => Status::Forbidden,
+            AuthenticatorErrors::ExpiredPolicy => Status::Forbidden,
+            AuthenticatorErrors::InvalidSignature => Status::Forbidden,
+            AuthenticatorErrors::TooManyUserAccesses => Status::TooManyRequests,
+            AuthenticatorErrors::InvalidAccountName => Status::Forbidden,
+        }
+    }
+    pub fn get_error(&self) -> String {
         match self {
             AuthenticatorErrors::AccountNotFound => {
                 "Account not found.".into()
@@ -58,29 +78,6 @@ impl AuthenticatorErrors {
         }
     }
 }
-
-impl error::ResponseError for AuthenticatorErrors {
-    fn status_code(&self) -> StatusCode {
-        match self {
-            AuthenticatorErrors::AccountNotFound => StatusCode::NOT_FOUND,
-            AuthenticatorErrors::InvalidId => StatusCode::NOT_FOUND,
-            AuthenticatorErrors::InvalidToken => StatusCode::FORBIDDEN,
-            AuthenticatorErrors::BlockchainError => StatusCode::SERVICE_UNAVAILABLE,
-            AuthenticatorErrors::NotStoredBlockchain => StatusCode::NOT_FOUND,
-            AuthenticatorErrors::MismatchedPolicies => StatusCode::FORBIDDEN,
-            AuthenticatorErrors::ExpiredPolicy => StatusCode::FORBIDDEN,
-            AuthenticatorErrors::InvalidSignature => StatusCode::FORBIDDEN,
-            AuthenticatorErrors::TooManyUserAccesses => StatusCode::TOO_MANY_REQUESTS,
-            AuthenticatorErrors::InvalidAccountName => StatusCode::FORBIDDEN,
-        }
-    }
-    fn error_response(&self) -> HttpResponse {
-        HttpResponse::build(self.status_code()).json(MyErrorResponse {
-            error_message: self.error_response(),
-        })
-    }
-}
-
 impl fmt::Display for AuthenticatorErrors {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         write!(f, "{}", self)

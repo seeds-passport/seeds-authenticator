@@ -1,10 +1,9 @@
 pub mod settings;
-pub mod signature;
-pub mod blockchain;
 pub mod errors;
-pub mod tests;
+pub mod signature;
+pub mod throttling;
+pub mod blockchain;
+pub mod helpers;
+pub mod validate;
 pub mod blockchain_updater;
 pub mod logger;
-pub mod throttling;
-pub mod validate;
-pub mod helpers;

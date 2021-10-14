@@ -1,6 +1,5 @@
-use actix_web::client::{Client};
 use serde::{Deserialize, Serialize};
-use crate::utils::{settings::Settings, settings::Blockchain, helpers::name_bytes_to_u64};
+use crate::utils::{settings::Settings, helpers::name_bytes_to_u64};
 use ureq;
 use std::str;
 use serde_json::Value;
@@ -10,19 +9,17 @@ pub struct Account {
 	account_name: String
 }
 
-pub async fn get_account(account_name: &String, settings: &Blockchain) -> Result<Account, &'static str> {
-	let client = Client::default();
+pub async fn get_account(account_name: &String) -> Result<Account, &'static str> {
+	let settings = Settings::new().unwrap();
 
-	let response = client.post(format!("{}/v1/chain/get_account", &settings.host))   // <- Create request builder
-		.send_body(format!("{{\"account_name\": \"{}\"}}", &account_name))
-		.await;
+	let resp = ureq::post(&format!("{}/v1/chain/get_account", settings.blockchain.host))
+		.send_json(ureq::json!({
+	    "account_name": &account_name,
+	}));
 
-	match response {
-		Ok(mut resp) => {
-
-			let body = resp.body().await.unwrap();
-			let json: Result<Account, _> = serde_json::from_str(str::from_utf8(&body).unwrap());
-
+	match resp {
+		Ok(response) => {
+			let json: Result<Account, _> = serde_json::from_str(&response.into_string().unwrap());
 			match json {
 				Ok(account) => {
 					Ok(account)
@@ -31,9 +28,10 @@ pub async fn get_account(account_name: &String, settings: &Blockchain) -> Result
 					Err("Account not found")
 				}
 			}
-
 		},
-		Err(_) => Err("Invalid response")
+		Err(_) => {
+			Err("Invalid response")
+		}
 	}
 
 

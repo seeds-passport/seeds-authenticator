@@ -1,34 +1,27 @@
-#![allow(unused)]
-use crate::utils::{
-    throttling
-};
-use std::{thread, time};
-use tokio::{
-    task,
-    time::{sleep, Duration}
-};
+#[macro_use] extern crate rocket;
 
-mod api;
+#[cfg(test)] mod tests;
+
+pub mod api;
+pub mod utils;
 mod database;
-mod router;
-mod utils;
-mod web;
+use std::thread;
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    std::env::set_var("RUST_LOG", "actix_web=info,actix_redis=info");
-    env_logger::init();
+use crate::utils::throttling;
 
+#[launch]
+fn rocket() -> _ {
     let db = database::get_db();
-
-    // Let's spawn the support services
-    spawn_services(db.clone()); 
-
-    // Let's start the web server
-    web::start_server(db.clone()).await
+    rocket::build()
+        .manage(spawn_services(db.clone()))
+        .manage(db)
+        .attach(api::new::stage())
+        .attach(api::invalidate::stage())
+        .attach(api::info::stage())
+        .attach(api::check::stage())
 }
 
-fn spawn_services(db: crate::database::Database) {
+fn spawn_services(db: database::Database) {
     thread::spawn(move || {
         utils::blockchain_updater::start(db.clone());
     });

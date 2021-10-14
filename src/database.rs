@@ -1,19 +1,18 @@
 use sled_extensions::{Config, bincode::Tree, DbExt};
-use actix_web::{Result, web};
-use chrono::prelude::*;
-
+use serde::{Deserialize, Serialize};
+use rocket::request::{self, FromRequest, Request};
 use crate::utils::{
+    errors::AuthenticatorErrors,
     settings::Settings,
     signature::hash_token,
-    errors::AuthenticatorErrors
 };
-use serde::{Deserialize, Serialize};
+use rocket::outcome::IntoOutcome;
 
 #[derive(Clone)]
 pub struct Database {
     pub waiting_for_confirmation: Tree<AuthenticationEntry>,
     pub authentication_entries: Tree<AuthenticationEntry>,
-    pub state: Tree<State>
+    pub database_state: Tree<DatabaseState>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -28,28 +27,37 @@ pub struct AuthenticationEntry {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct State {
+pub struct DatabaseState {
     pub last_blockchain_id: u64,
     pub last_updated_at: u64,
 }
 
-pub fn get_db() -> Database {
-    let settings = Settings::new().unwrap();
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for Database {
+    type Error = ();
 
-    let db = Config::default()
-        .path(settings.database.path.to_owned())
-        .open()
-        .unwrap();
-
-    Database {
-        waiting_for_confirmation: db.open_bincode_tree("waiting_for_confirmation").unwrap(),
-        authentication_entries: db.open_bincode_tree("authentication_entries").unwrap(),
-        state: db.open_bincode_tree("state").unwrap()
+    async fn from_request(request: &'r Request<'_>) -> request::Outcome<Self, ()> {
+        let outcome = request.rocket().state::<Database>()
+            .map(|database| database.to_owned())
+            .or_forward(());
+        outcome
     }
 }
 
+
+pub fn get_db() -> Database {
+    let db = Config::default()
+        .path(Settings::new().unwrap().database.path.to_owned())
+        .open()
+        .unwrap();
+    Database {
+        waiting_for_confirmation: db.open_bincode_tree("waiting_for_confirmation").unwrap(),
+        authentication_entries: db.open_bincode_tree("authentication_entries").unwrap(),
+        database_state: db.open_bincode_tree("database_state").unwrap()
+    }
+}
 pub fn get_authentication_entry(
-    db: &web::Data<crate::database::Database>,
+    db: Database,
     id: &String,
     token: &String
 ) -> Result<AuthenticationEntry, AuthenticatorErrors> {
@@ -67,12 +75,11 @@ pub fn get_authentication_entry(
     }
 }
 pub fn get_waiting_for_confirmation(
-    db: &crate::database::Database,
+    db: Database,
     id: &String
 ) -> Result<AuthenticationEntry, AuthenticatorErrors> {
-
     match db.waiting_for_confirmation.get(&id).unwrap() {
-        Some(record) => Ok(record), 
+        Some(record) => Ok(record),
         None => Err(AuthenticatorErrors::InvalidId)
     }
 }

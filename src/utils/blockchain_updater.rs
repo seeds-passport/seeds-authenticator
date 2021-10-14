@@ -5,15 +5,8 @@ use crate::utils::{
 };
 use crate::database;
 use serde_json::Value;
-use std::{
-	thread,
-	time::{SystemTime, UNIX_EPOCH},
-	time
-};
-use tokio::{
-	task,
-	time::{sleep, Duration}
-};
+use std::time::{SystemTime, UNIX_EPOCH};
+use tokio::time::{sleep, Duration};
 
 pub fn start(db: crate::database::Database) {
 	let settings = Settings::new().unwrap();
@@ -22,7 +15,7 @@ pub fn start(db: crate::database::Database) {
 	loop {
 		rt.block_on(async {
 			
-			let mut last_blockchain_index = get_next_blockchain_id(&db);
+			let mut last_blockchain_index = get_next_blockchain_id(db.clone());
 			
 			log(format!("Starting blockchain updater..."));
 
@@ -49,10 +42,10 @@ pub fn start(db: crate::database::Database) {
 							None => {}
 						}
 		
-						update_last_blockchain_id(&db, &last_blockchain_index);
+						update_last_blockchain_id(db.clone(), &last_blockchain_index);
 		
 						// Update records for this batch
-						update_records(&db, data);
+						update_records(db.clone(), data);
 					},
 					Err(_) => {
 						log(format!("Blockchain call failed. Retrying..."));
@@ -78,8 +71,8 @@ pub fn start(db: crate::database::Database) {
 							},
 							None => {}
 						}
-						update_last_blockchain_id(&db, &last_blockchain_index);
-						update_records(&db, data);
+						update_last_blockchain_id(db.clone(), &last_blockchain_index);
+						update_records(db.clone(), data);
 					},
 					Err(_) => {
 						log(format!("Blockchain call failed. Retrying..."));
@@ -93,8 +86,8 @@ pub fn start(db: crate::database::Database) {
 	};
 }
 
-fn get_next_blockchain_id(db: &crate::database::Database) -> u64 {
-	match db.state.get("state").unwrap() {
+fn get_next_blockchain_id(db: crate::database::Database) -> u64 {
+	match db.database_state.get("state").unwrap() {
 		Some(state) => {
 			state.last_blockchain_id
 		},
@@ -102,19 +95,19 @@ fn get_next_blockchain_id(db: &crate::database::Database) -> u64 {
 	}
 }
 
-fn update_records(db: &crate::database::Database, response: Value) {
+fn update_records(db: crate::database::Database, response: Value) {
 	let response_iter = response["rows"].as_array().unwrap();
 	for value in response_iter {
 		// For each record in the response, we want to check the database for entries, and update its blockchain_index
 		let backend_user_id = value["backend_user_id"].as_str().unwrap();
 		let index = value["id"].as_u64().unwrap();
-		match database::get_waiting_for_confirmation(db, &backend_user_id.to_string()) {
+		match database::get_waiting_for_confirmation(db.clone(), &backend_user_id.to_string()) {
 			Ok(mut entry) => {
 				// Update the index
 				entry.blockchain_index = Some(index);
 
 				// Remove from the waiting_for_confirmation Tree
-				db.waiting_for_confirmation.remove(backend_user_id.as_bytes());
+				let _ = db.waiting_for_confirmation.remove(backend_user_id.as_bytes());
 
 				// Proceed to add or update the authentication_entries entry
 				let _ = db.authentication_entries.fetch_and_update(backend_user_id.as_bytes(), |el| {
@@ -134,18 +127,18 @@ fn update_records(db: &crate::database::Database, response: Value) {
 					}
 				});
 			},
-			Err(error) => {
+			Err(_error) => {
 				log(format!("Authentication Entry {:?} does not exist on the database.", backend_user_id));
 			}
 		}
 	}
 }
 
-fn update_last_blockchain_id(db: &crate::database::Database, last_blockchain_id: &u64) {
-	match db.state.get("state").unwrap() {
+fn update_last_blockchain_id(db: crate::database::Database, last_blockchain_id: &u64) {
+	match db.database_state.get("state").unwrap() {
 		Some(mut state) => {
 			state.last_blockchain_id = last_blockchain_id.clone();
-			let _ = db.state.fetch_and_update("state", |el| {
+			let _ = db.database_state.fetch_and_update("state", |el| {
 				let mut element = el.unwrap();
 				element.last_blockchain_id = last_blockchain_id.clone();
 				Some(element)
@@ -154,8 +147,8 @@ fn update_last_blockchain_id(db: &crate::database::Database, last_blockchain_id:
 		None => {
 			let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
 
-			db.state
-				.insert("state", crate::database::State {
+			db.database_state
+				.insert("state", crate::database::DatabaseState {
 					last_blockchain_id: last_blockchain_id.clone(),
 					last_updated_at: now
 				}).unwrap();

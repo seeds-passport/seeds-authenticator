@@ -1,17 +1,14 @@
 use serde::{Deserialize, Serialize};
 use std::str;
 use std::time::{SystemTime, UNIX_EPOCH};
-use serde_json::{
-	json,
-	Value
-};
-use actix_web::{web, HttpResponse, Result, HttpRequest};
+use serde_json::Value;
 use crate::utils::{
 	errors::AuthenticatorErrors,
 	blockchain::load_authentication_entries,
 	signature::sign
 };
 use crate::database::{
+	Database,
 	AuthenticationEntry,
 	get_authentication_entry
 };
@@ -23,14 +20,13 @@ pub struct CheckRequest {
 }
 
 pub async fn validate_token_and_fetch_from_blockchain(
-	db: web::Data<crate::database::Database>,
-	req: HttpRequest,
-	params: &web::Json<CheckRequest>
+	db: Database,
+	id: &str,
+	token: String
 ) -> Result<(AuthenticationEntry, Value), AuthenticatorErrors> {
-	let authentication_entry_id = req.match_info().get("id").unwrap().to_string();
-	let token = params.token.to_string();
+	let authentication_entry_id = id;
 
-	match get_authentication_entry(&db, &authentication_entry_id, &token) {
+	match get_authentication_entry(db.clone(), &authentication_entry_id.to_string(), &token) {
 		Ok(data) => {
 			match data.blockchain_index {
 				Some(blockchain_index) => {

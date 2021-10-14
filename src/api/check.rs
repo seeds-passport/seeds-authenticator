@@ -1,27 +1,42 @@
-use actix_web::{web, HttpResponse, Result, HttpRequest};
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-use crate::utils::errors::AuthenticatorErrors;
-use crate::utils::validate::{
-	validate_token_and_fetch_from_blockchain, 
-	verify_credentials, 
-	CheckRequest
+use rocket::serde::json::{Json, Value, json};
+use rocket::response::status;
+use crate::{
+    utils::validate::{
+            validate_token_and_fetch_from_blockchain,
+            verify_credentials,
+            CheckRequest
+    },
+    database::Database
 };
+use rocket::http::Status;
 
-pub async fn check(
-	db: web::Data<crate::database::Database>,
-	req: HttpRequest,
-	params: web::Json<CheckRequest>,
-) -> Result<HttpResponse, AuthenticatorErrors> {
-	match validate_token_and_fetch_from_blockchain(db, req, &params).await {
-		Ok((db_entry, blockchain_entry)) => {
-			match verify_credentials(db_entry, blockchain_entry,  params.token.to_string()).await {
-				Ok(_) => return Ok(HttpResponse::Ok().json(json!({"status": "ok"}))),
-				Err(error) => return Err(error)
-			}
-		}
-		Err(error) => return Err(error)
-	}
-	 
+#[post("/<id>", format = "json", data = "<check_request>")]
+async fn check(db: Database, check_request: Json<CheckRequest>, id: &str) -> status::Custom<Value> {
+    match validate_token_and_fetch_from_blockchain(db, id, check_request.token.clone()).await {
+        Ok((db_entry, blockchain_entry)) => {
+            match verify_credentials(db_entry, blockchain_entry, check_request.token.clone()).await {
+                Ok(_) => {
+                    return status::Custom(
+                        Status::Accepted,
+                        json!({ "message": {"status": "ok"} }));
+                }
+                Err(error) => {
+                    return status::Custom(
+                        error.status_code(),
+                        json!({ "message": error.get_error() }));
+                }
+            }
+        }
+        Err(error) => {
+            return status::Custom(
+                error.status_code(),
+                json!({ "message": error.get_error() }));
+        }
+    }
 }
 
+pub fn stage() -> rocket::fairing::AdHoc {
+    rocket::fairing::AdHoc::on_ignite("JSON", |rocket| async {
+        rocket.mount("/check", routes![check])
+    })
+}
