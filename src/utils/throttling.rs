@@ -13,7 +13,7 @@ use tokio::time::{sleep, Duration};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AccessStatistic {
-	pub account_name: String,
+	pub account_name: Option<String>,
 	pub ip_address: std::net::IpAddr,
 	pub timestamp: DateTime<Utc>
 }
@@ -31,10 +31,15 @@ static ACCESS_STATISTICS: Lazy<Mutex<HashMap<String, Vec<AccessStatistic>>>> = L
  * 	true => the user can do the request
  * 	false => if the user reached the maximum number of requests allowed
  */
-pub fn permission(account_name: &String, ip: std::net::IpAddr) -> bool {
+pub fn permission(account_name: &Option<String>, ip: std::net::IpAddr) -> bool {
 	let settings = Settings::new().unwrap();
 	let current_time: DateTime<Utc> = Utc::now();
-	let access_identifier: String = format!("{}-{}", account_name, &ip.to_string());
+	let access_identifier: String =format!(
+		"{}-{}", account_name
+		.as_ref()
+		.map(|s| s.clone())
+		.unwrap_or("anonymous".to_string()
+	), &ip.to_string());
 	let access_statistic: AccessStatistic = AccessStatistic {
 		account_name: account_name.clone(),
 		ip_address: ip,

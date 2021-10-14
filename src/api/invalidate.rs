@@ -1,4 +1,5 @@
-use rocket::serde::json::{Json, Value, json};
+use rocket::serde::json::{Json, Value};
+use serde_json::json;
 use rocket::serde::{Serialize, Deserialize};
 use rocket::response::status;
 use crate::database::{Database, get_authentication_entry};
@@ -32,6 +33,6 @@ async fn invalidate(db: Database, invalidate_request: Json<InvalidateRequest>, i
 
 pub fn stage() -> rocket::fairing::AdHoc {
     rocket::fairing::AdHoc::on_ignite("JSON", |rocket| async {
-        rocket.mount("/invalidate", routes![invalidate])
+        rocket.mount("/api/v1/invalidate", routes![invalidate])
     })
 }

@@ -1,4 +1,5 @@
-use rocket::serde::json::{Json, Value, json};
+use rocket::serde::json::{Json, Value};
+use serde_json::json;
 use rocket::response::status;
 use crate::{
     utils::validate::{
@@ -37,6 +38,6 @@ async fn check(db: Database, check_request: Json<CheckRequest>, id: &str) -> sta
 
 pub fn stage() -> rocket::fairing::AdHoc {
     rocket::fairing::AdHoc::on_ignite("JSON", |rocket| async {
-        rocket.mount("/check", routes![check])
+        rocket.mount("/api/v1/check", routes![check])
     })
 }
