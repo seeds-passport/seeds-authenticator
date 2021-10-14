@@ -22,10 +22,11 @@ async fn info(db: Database, check_request: Json<CheckRequest>, id: &str) -> stat
                 check_request.token.clone()
             ).await {
                 Ok(_) => {
-                    let user = load_user_data(&db_entry.account_name.to_string()).await.unwrap();
-                    return status::Custom(
-                        Status::Accepted,
-                        json!({ "message": user  }));
+                    let mut user = load_user_data(&db_entry.account_name.to_string()).await.unwrap()["rows"][0].clone();
+
+                    user["token_valid_until"] = json!(&db_entry.valid_until.to_string());
+
+                    return status::Custom(Status::Accepted, user);
                 }
                 Err(error) => {
                     return status::Custom(
