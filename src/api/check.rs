@@ -19,7 +19,7 @@ async fn check(db: Database, check_request: Json<CheckRequest>, id: &str) -> sta
                 Ok(_) => {
                     return status::Custom(
                         Status::Accepted,
-                        json!({ "message": {"status": "ok"} }));
+                        json!({ "message": "ok" }));
                 }
                 Err(error) => {
                     return status::Custom(

@@ -35,7 +35,7 @@ impl AuthenticatorErrors {
             AuthenticatorErrors::InvalidId => Status::NotFound,
             AuthenticatorErrors::InvalidToken => Status::Forbidden,
             AuthenticatorErrors::BlockchainError => Status::ServiceUnavailable,
-            AuthenticatorErrors::NotStoredBlockchain => Status::NotFound,
+            AuthenticatorErrors::NotStoredBlockchain => Status::Forbidden,
             AuthenticatorErrors::MismatchedPolicies => Status::Forbidden,
             AuthenticatorErrors::ExpiredPolicy => Status::Forbidden,
             AuthenticatorErrors::InvalidSignature => Status::Forbidden,
